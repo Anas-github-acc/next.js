@@ -55,6 +55,7 @@ import {
   TURBOPACK_CLIENT_MIDDLEWARE_MANIFEST,
   ROUTES_MANIFEST,
   PRERENDER_MANIFEST,
+  ROUTE_TYPES_MANIFEST,
 } from '../../../shared/lib/constants'
 
 import { getMiddlewareRouteMatcher } from '../../../shared/lib/router/utils/middleware-route-matcher'
@@ -150,6 +151,55 @@ async function verifyTypeScript(opts: SetupOpts) {
   return usingTypeScript
 }
 
+interface RouteTypesManifest {
+  pages: Record<string, {}>
+  layouts: Record<string, {}>
+}
+
+function createRouteTypesManifest({
+  appPageFilePaths,
+  appLayoutFilePaths,
+}: {
+  appPageFilePaths: Map<string, string>
+  appLayoutFilePaths: Map<string, string>
+}): RouteTypesManifest {
+  const pages: Record<string, {}> = {}
+  const layouts: Record<string, {}> = {}
+
+  // app directory page files
+  for (const [route, _filePath] of appPageFilePaths) {
+    // Ignore intercepting routes
+    if (
+      route.includes('(..)') ||
+      route.includes('(.)') ||
+      route.includes('...') ||
+      route.includes('@') // should never happen but just in case
+    ) {
+      continue
+    }
+    pages[route] = {}
+  }
+
+  // app directory layout files
+  for (const [route] of appLayoutFilePaths) {
+    // Ignore intercepting routes
+    if (
+      route.includes('(..)') ||
+      route.includes('(.)') ||
+      route.includes('...') ||
+      route.includes('@') // should never happen but just in case
+    ) {
+      continue
+    }
+    layouts[route] = {}
+  }
+
+  return {
+    pages,
+    layouts,
+  }
+}
+
 export async function propagateServerField(
   opts: SetupOpts,
   field: PropagateToWorkersField,
@@ -229,6 +279,17 @@ async function startWatcher(
   await fs.promises.writeFile(
     routesManifestPath,
     JSON.stringify(routesManifest)
+  )
+
+  // Create and write route-types.json manifest
+  const routeTypesManifestPath = path.join(distDir, ROUTE_TYPES_MANIFEST)
+  const routeTypesManifest = createRouteTypesManifest({
+    appPageFilePaths: new Map(),
+    appLayoutFilePaths: new Map(),
+  })
+  await fs.promises.writeFile(
+    routeTypesManifestPath,
+    JSON.stringify(routeTypesManifest, null, 2)
   )
 
   const prerenderManifestPath = path.join(distDir, PRERENDER_MANIFEST)
@@ -330,6 +391,7 @@ async function startWatcher(
       const conflictingAppPagePaths = new Set<string>()
       const appPageFilePaths = new Map<string, string>()
       const pagesPageFilePaths = new Map<string, string>()
+      const appLayoutFilePaths = new Map<string, string>()
 
       let envChange = false
       let tsconfigChange = false
@@ -344,6 +406,13 @@ async function startWatcher(
 
       const sortedKnownFiles: string[] = [...knownFiles.keys()].sort(
         sortByPageExts(nextConfig.pageExtensions)
+      )
+
+      // Create layout file regex
+      const getExtensionRegexString = (extensions: string[]) =>
+        `(?:${extensions.join('|')})`
+      const layoutFileRegex = new RegExp(
+        `[\\\\/]layout\\.${getExtensionRegexString(nextConfig.pageExtensions)}$`
       )
 
       for (const fileName of sortedKnownFiles) {
@@ -493,6 +562,16 @@ async function startWatcher(
             'API Routes cannot be used with "output: export". See more info here: https://nextjs.org/docs/advanced-features/static-html-export'
           )
           continue
+        }
+
+        // Check if this is a layout file before it gets filtered out by isAppRouterPage
+        if (isAppPath && layoutFileRegex.test(fileName)) {
+          const layoutRoute = normalizeAppPath(pageName).replace(/%5F/g, '_')
+
+          // Ignore files/directories starting with `_` in the app directory
+          if (!normalizePathSep(layoutRoute).includes('/_')) {
+            appLayoutFilePaths.set(layoutRoute, fileName)
+          }
         }
 
         if (isAppPath) {
@@ -930,6 +1009,20 @@ async function startWatcher(
           })
         }
         prevSortedRoutes = sortedRoutes
+
+        // Update route-types.json manifest
+        const updatedRouteTypesManifest = createRouteTypesManifest({
+          appPageFilePaths,
+          appLayoutFilePaths,
+        })
+        const updatedRouteTypesManifestPath = path.join(
+          distDir,
+          ROUTE_TYPES_MANIFEST
+        )
+        await fs.promises.writeFile(
+          updatedRouteTypesManifestPath,
+          JSON.stringify(updatedRouteTypesManifest, null, 2)
+        )
 
         if (!resolved) {
           resolve()
