@@ -153,15 +153,17 @@ async function verifyTypeScript(opts: SetupOpts) {
 
 interface RouteTypesManifest {
   pages: Record<string, {}>
-  layouts: Record<string, {}>
+  layouts: Record<string, {} | { slots: string[] }>
 }
 
 function createRouteTypesManifest({
   appPageFilePaths,
   appLayoutFilePaths,
+  layoutSlots,
 }: {
   appPageFilePaths: Map<string, string>
   appLayoutFilePaths: Map<string, string>
+  layoutSlots: Map<string, Set<string>>
 }): RouteTypesManifest {
   const pages: Record<string, {}> = {}
   const layouts: Record<string, {}> = {}
@@ -191,7 +193,14 @@ function createRouteTypesManifest({
     ) {
       continue
     }
-    layouts[route] = {}
+
+    // Check if this layout has parallel routes (slots)
+    if (layoutSlots.has(route)) {
+      const slots = Array.from(layoutSlots.get(route)!).sort()
+      layouts[route] = { slots }
+    } else {
+      layouts[route] = {}
+    }
   }
 
   return {
@@ -286,6 +295,7 @@ async function startWatcher(
   const routeTypesManifest = createRouteTypesManifest({
     appPageFilePaths: new Map(),
     appLayoutFilePaths: new Map(),
+    layoutSlots: new Map(),
   })
   await fs.promises.writeFile(
     routeTypesManifestPath,
@@ -392,6 +402,7 @@ async function startWatcher(
       const appPageFilePaths = new Map<string, string>()
       const pagesPageFilePaths = new Map<string, string>()
       const appLayoutFilePaths = new Map<string, string>()
+      const layoutSlots = new Map<string, Set<string>>()
 
       let envChange = false
       let tsconfigChange = false
@@ -562,6 +573,22 @@ async function startWatcher(
             'API Routes cannot be used with "output: export". See more info here: https://nextjs.org/docs/advanced-features/static-html-export'
           )
           continue
+        }
+
+        // Check if this is a parallel route (slot) before it gets filtered out
+        if (isAppPath) {
+          const normalizedPageName = normalizePathSep(pageName)
+          const slotMatch = normalizedPageName.match(/^(.*)\/(@[^/]+)\//)
+
+          if (slotMatch) {
+            const parentPath = slotMatch[1] || '/'
+            const slotName = slotMatch[2].substring(1) // Remove '@' prefix
+
+            if (!layoutSlots.has(parentPath)) {
+              layoutSlots.set(parentPath, new Set())
+            }
+            layoutSlots.get(parentPath)!.add(slotName)
+          }
         }
 
         // Check if this is a layout file before it gets filtered out by isAppRouterPage
@@ -1014,6 +1041,7 @@ async function startWatcher(
         const updatedRouteTypesManifest = createRouteTypesManifest({
           appPageFilePaths,
           appLayoutFilePaths,
+          layoutSlots,
         })
         const updatedRouteTypesManifestPath = path.join(
           distDir,
