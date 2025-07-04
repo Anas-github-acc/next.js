@@ -284,6 +284,8 @@ function assignDefaults(
       })
     } else if (result.experimental?.nodeMiddleware) {
       throw new CanaryOnlyError({ feature: 'experimental.nodeMiddleware' })
+    } else if (result.experimental?.newTypedRoutes) {
+      throw new CanaryOnlyError({ feature: 'experimental.newTypedRoutes' })
     }
   }
 
