@@ -55,7 +55,6 @@ import {
   TURBOPACK_CLIENT_MIDDLEWARE_MANIFEST,
   ROUTES_MANIFEST,
   PRERENDER_MANIFEST,
-  ROUTE_TYPES_MANIFEST,
 } from '../../../shared/lib/constants'
 
 import { getMiddlewareRouteMatcher } from '../../../shared/lib/router/utils/middleware-route-matcher'
@@ -84,6 +83,7 @@ import {
   TurbopackInternalError,
 } from '../../../shared/lib/turbopack/utils'
 import { getDefineEnv } from '../../../build/define-env'
+import { generateRouteTypesFile } from './typegen'
 
 export type SetupOpts = {
   renderServer: LazyRenderServerInstance
@@ -290,17 +290,20 @@ async function startWatcher(
     JSON.stringify(routesManifest)
   )
 
-  // Create and write route-types.json manifest
-  const routeTypesManifestPath = path.join(distDir, ROUTE_TYPES_MANIFEST)
+  // Create and write types/routes.ts file
+  const typesDir = path.join(distDir, 'types')
+  if (!fs.existsSync(typesDir)) {
+    await mkdir(typesDir, { recursive: true })
+  }
+
+  const routeTypesFilePath = path.join(typesDir, 'routes.ts')
   const routeTypesManifest = createRouteTypesManifest({
     appPageFilePaths: new Map(),
     appLayoutFilePaths: new Map(),
     layoutSlots: new Map(),
   })
-  await fs.promises.writeFile(
-    routeTypesManifestPath,
-    JSON.stringify(routeTypesManifest, null, 2)
-  )
+  const routeTypesFileContent = generateRouteTypesFile(routeTypesManifest)
+  await fs.promises.writeFile(routeTypesFilePath, routeTypesFileContent)
 
   const prerenderManifestPath = path.join(distDir, PRERENDER_MANIFEST)
   await fs.promises.writeFile(
@@ -1037,19 +1040,27 @@ async function startWatcher(
         }
         prevSortedRoutes = sortedRoutes
 
-        // Update route-types.json manifest
+        // Update types/routes.ts file
         const updatedRouteTypesManifest = createRouteTypesManifest({
           appPageFilePaths,
           appLayoutFilePaths,
           layoutSlots,
         })
-        const updatedRouteTypesManifestPath = path.join(
-          distDir,
-          ROUTE_TYPES_MANIFEST
+        const updatedTypesDir = path.join(distDir, 'types')
+        if (!fs.existsSync(updatedTypesDir)) {
+          await mkdir(updatedTypesDir, { recursive: true })
+        }
+
+        const updatedRouteTypesFilePath = path.join(
+          updatedTypesDir,
+          'routes.ts'
+        )
+        const updatedRouteTypesFileContent = generateRouteTypesFile(
+          updatedRouteTypesManifest
         )
         await fs.promises.writeFile(
-          updatedRouteTypesManifestPath,
-          JSON.stringify(updatedRouteTypesManifest, null, 2)
+          updatedRouteTypesFilePath,
+          updatedRouteTypesFileContent
         )
 
         if (!resolved) {
