@@ -170,11 +170,11 @@ function createRouteTypesManifest({
 
   // app directory page files
   for (const [route, _filePath] of appPageFilePaths) {
-    // Ignore intercepting routes
+    // Ignore intercepting routes (but not catch-all routes)
     if (
       route.includes('(..)') ||
       route.includes('(.)') ||
-      route.includes('...') ||
+      route.includes('(...)') || // Only filter intercepting routes, not catch-all [...]
       route.includes('@') // should never happen but just in case
     ) {
       continue
@@ -184,11 +184,11 @@ function createRouteTypesManifest({
 
   // app directory layout files
   for (const [route] of appLayoutFilePaths) {
-    // Ignore intercepting routes
+    // Ignore intercepting routes (but not catch-all routes)
     if (
       route.includes('(..)') ||
       route.includes('(.)') ||
-      route.includes('...') ||
+      route.includes('(...)') || // Only filter intercepting routes, not catch-all [...]
       route.includes('@') // should never happen but just in case
     ) {
       continue
