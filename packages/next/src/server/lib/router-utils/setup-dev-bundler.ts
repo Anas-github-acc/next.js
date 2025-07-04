@@ -290,18 +290,27 @@ async function startWatcher(
     JSON.stringify(routesManifest)
   )
 
-  // Create and write types/routes.ts file
+  // Create and write routes.json and types/routes.ts files
   const typesDir = path.join(distDir, 'types')
   if (!fs.existsSync(typesDir)) {
     await mkdir(typesDir, { recursive: true })
   }
 
-  const routeTypesFilePath = path.join(typesDir, 'routes.ts')
   const routeTypesManifest = createRouteTypesManifest({
     appPageFilePaths: new Map(),
     appLayoutFilePaths: new Map(),
     layoutSlots: new Map(),
   })
+
+  // Write routes.json
+  const routesJsonPath = path.join(distDir, 'routes.json')
+  await fs.promises.writeFile(
+    routesJsonPath,
+    JSON.stringify(routeTypesManifest, null, 2)
+  )
+
+  // Write types/routes.ts that imports from routes.json
+  const routeTypesFilePath = path.join(typesDir, 'routes.ts')
   const routeTypesFileContent = generateRouteTypesFile(routeTypesManifest)
   await fs.promises.writeFile(routeTypesFilePath, routeTypesFileContent)
 
@@ -1040,7 +1049,7 @@ async function startWatcher(
         }
         prevSortedRoutes = sortedRoutes
 
-        // Update types/routes.ts file
+        // Update routes.json and types/routes.ts files
         const updatedRouteTypesManifest = createRouteTypesManifest({
           appPageFilePaths,
           appLayoutFilePaths,
@@ -1051,6 +1060,14 @@ async function startWatcher(
           await mkdir(updatedTypesDir, { recursive: true })
         }
 
+        // Write updated routes.json
+        const updatedRoutesJsonPath = path.join(distDir, 'routes.json')
+        await fs.promises.writeFile(
+          updatedRoutesJsonPath,
+          JSON.stringify(updatedRouteTypesManifest, null, 2)
+        )
+
+        // Write updated types/routes.ts
         const updatedRouteTypesFilePath = path.join(
           updatedTypesDir,
           'routes.ts'
