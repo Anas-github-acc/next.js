@@ -81,71 +81,37 @@ describe('server-navigation-error', () => {
       // FIXME: the first request to middleware error load didn't show the redbox, need one more reload
       await browser.refresh()
 
-      // TODO(veil): investigate the column number is off by 1 between turbo and webpack
-      if (isTurbopack) {
-        await expect(browser).toDisplayRedbox(`
-         {
-           "description": "Next.js navigation API is not allowed to be used in Middleware.",
-           "environmentLabel": null,
-           "label": "Runtime Error",
-           "source": "middleware.ts (8:12) @ middleware
-         >  8 |     redirect('/')
-              |            ^",
-           "stack": [
-             "middleware middleware.ts (8:12)",
-           ],
-         }
-        `)
-      } else {
-        await expect(browser).toDisplayRedbox(`
-         {
-           "description": "Next.js navigation API is not allowed to be used in Middleware.",
-           "environmentLabel": null,
-           "label": "Runtime Error",
-           "source": "middleware.ts (8:13) @ middleware
-         >  8 |     redirect('/')
-              |             ^",
-           "stack": [
-             "middleware middleware.ts (8:13)",
-           ],
-         }
-        `)
-      }
+      await expect(browser).toDisplayRedbox(`
+        {
+          "description": "Next.js navigation API is not allowed to be used in Middleware.",
+          "environmentLabel": null,
+          "label": "Runtime Error",
+          "source": "middleware.ts (8:13) @ middleware
+        >  8 |     redirect('/')
+            |             ^",
+          "stack": [
+            "middleware middleware.ts (8:13)",
+          ],
+        }
+      `)
     })
 
     it('should error on navigation API not-found', async () => {
       const browser = await next.browser('/middleware/not-found')
 
-      // TODO(veil): investigate the column number is off by 1 between turbo and webpack
-      if (isTurbopack) {
-        await expect(browser).toDisplayRedbox(`
-         {
-           "description": "Next.js navigation API is not allowed to be used in Middleware.",
-           "environmentLabel": null,
-           "label": "Runtime Error",
-           "source": "middleware.ts (6:12) @ middleware
-         > 6 |     notFound()
-             |            ^",
-           "stack": [
-             "middleware middleware.ts (6:12)",
-           ],
-         }
-        `)
-      } else {
-        await expect(browser).toDisplayRedbox(`
-         {
-           "description": "Next.js navigation API is not allowed to be used in Middleware.",
-           "environmentLabel": null,
-           "label": "Runtime Error",
-           "source": "middleware.ts (6:13) @ middleware
-         > 6 |     notFound()
-             |             ^",
-           "stack": [
-             "middleware middleware.ts (6:13)",
-           ],
-         }
-        `)
-      }
+      await expect(browser).toDisplayRedbox(`
+        {
+          "description": "Next.js navigation API is not allowed to be used in Middleware.",
+          "environmentLabel": null,
+          "label": "Runtime Error",
+          "source": "middleware.ts (6:13) @ middleware
+        > 6 |     notFound()
+            |             ^",
+          "stack": [
+            "middleware middleware.ts (6:13)",
+          ],
+        }
+      `)
     })
   })
 })

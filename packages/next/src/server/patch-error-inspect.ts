@@ -204,7 +204,7 @@ function getSourcemappedFrameIfPossible(
   }
 
   const sourcePosition = sourceMapConsumer.originalPositionFor({
-    column: frame.column ?? 0,
+    column: (frame.column ?? 1) - 1,
     line: frame.lineNumber ?? 1,
   })
 
@@ -257,7 +257,7 @@ function getSourcemappedFrameIfPossible(
     methodName: frame.methodName
       ?.replace('__WEBPACK_DEFAULT_EXPORT__', 'default')
       ?.replace('__webpack_exports__.', ''),
-    column: sourcePosition.column,
+    column: sourcePosition.column + 1,
     file: sourcePosition.source,
     lineNumber: sourcePosition.line,
     // TODO: c&p from async createOriginalStackFrame but why not frame.arguments?

@@ -135,20 +135,11 @@ describe.each([
             )
           }
 
-          // TODO(veil): Inconsistent cursor position
-          if (isTurbopack) {
-            expect(output).toContain(
-              '' +
-                "\n> 11 |   return { value: eval('100') }" +
-                '\n     |                ^'
-            )
-          } else {
-            expect(output).toContain(
-              '' +
-                "\n> 11 |   return { value: eval('100') }" +
-                '\n     |                  ^'
-            )
-          }
+          expect(output).toContain(
+            '' +
+              "\n> 11 |   return { value: eval('100') }" +
+              '\n     |                  ^'
+          )
         })
 
         it('does not show warning when no code uses eval', async () => {
@@ -203,20 +194,11 @@ describe.each([
                     '\n    at'
             )
 
-            // TODO(veil): Inconsistent cursor position
-            if (isTurbopack) {
-              expect(output).toContain(
-                '' +
-                  '\n> 22 |   const module = await WebAssembly.compile(SQUARE_WASM_BUFFER)' +
-                  '\n     |                 ^'
-              )
-            } else {
-              expect(output).toContain(
-                '' +
-                  '\n> 22 |   const module = await WebAssembly.compile(SQUARE_WASM_BUFFER)' +
-                  '\n     |                       ^'
-              )
-            }
+            expect(output).toContain(
+              '' +
+                '\n> 22 |   const module = await WebAssembly.compile(SQUARE_WASM_BUFFER)' +
+                '\n     |                       ^'
+            )
           }
         })
 

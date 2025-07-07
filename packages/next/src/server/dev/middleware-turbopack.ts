@@ -36,6 +36,9 @@ function shouldIgnorePath(modulePath: string): boolean {
 type IgnorableStackFrame = StackFrame & { ignored: boolean }
 
 const currentSourcesByFile: Map<string, Promise<string | null>> = new Map()
+/**
+ * @returns 1-based lines and 1-based columns
+ */
 async function batchedTraceSource(
   project: Project,
   frame: TurbopackStackFrame
@@ -106,7 +109,7 @@ async function batchedTraceSource(
   const ignorableFrame = {
     file: sourceFrame.file,
     lineNumber: sourceFrame.line ?? 0,
-    column: sourceFrame.column ?? 0,
+    column: (sourceFrame.column ?? 0) + 1,
     methodName:
       // We ignore the sourcemapped name since it won't be the correct name.
       // The callsite will point to the column of the variable name instead of the
@@ -174,7 +177,7 @@ function createStackFrame(
 }
 
 /**
- * @returns 1-based lines and 0-based columns
+ * @returns 1-based lines and 1-based columns
  */
 async function nativeTraceSource(
   frame: TurbopackStackFrame

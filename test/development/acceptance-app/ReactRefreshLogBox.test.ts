@@ -1163,38 +1163,20 @@ describe('ReactRefreshLogBox app', () => {
     )
     const { browser } = sandbox
 
-    if (isTurbopack) {
-      // TODO(veil): investigate the column number is off by 1 between turbo and webpack
-      await expect(browser).toDisplayRedbox(`
-       {
-         "description": "This is an error from an anonymous function",
-         "environmentLabel": "Server",
-         "label": "Runtime Error",
-         "source": "app/page.js (4:13) @ <anonymous>
-       > 4 |       throw new Error("This is an error from an anonymous function");
-           |             ^",
-         "stack": [
-           "<anonymous> app/page.js (4:13)",
-           "Page app/page.js (5:6)",
-         ],
-       }
-      `)
-    } else {
-      await expect(browser).toDisplayRedbox(`
-       {
-         "description": "This is an error from an anonymous function",
-         "environmentLabel": "Server",
-         "label": "Runtime Error",
-         "source": "app/page.js (4:13) @ eval
-       > 4 |       throw new Error("This is an error from an anonymous function");
-           |             ^",
-         "stack": [
-           "eval app/page.js (4:13)",
-           "Page app/page.js (5:5)",
-         ],
-       }
-      `)
-    }
+    await expect(browser).toDisplayRedbox(`
+      {
+        "description": "This is an error from an anonymous function",
+        "environmentLabel": "Server",
+        "label": "Runtime Error",
+        "source": "app/page.js (4:13) @ eval
+      > 4 |       throw new Error("This is an error from an anonymous function");
+          |             ^",
+        "stack": [
+          "eval app/page.js (4:13)",
+          "Page app/page.js (5:5)",
+        ],
+      }
+    `)
   })
 
   test('should hide unrelated frames in stack trace with nodejs internal calls', async () => {
