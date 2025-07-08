@@ -153,64 +153,69 @@ async function verifyTypeScript(opts: SetupOpts) {
 }
 
 export interface RouteTypesManifest {
-  pages: Record<string, {}>
-  layouts: Record<string, {} | { slots: string[] }>
+  // For routes.ts - normalized routes
+  appRoutes: Record<string, { path: string }>
+  pageRoutes: Record<string, { path: string }>
+  layoutRoutes: Record<
+    string,
+    { path: string } | { slots: string[]; path: string }
+  >
 }
 
 function createRouteTypesManifest({
+  dir,
   pagesPageFilePaths,
   appPageFilePaths,
   appLayoutFilePaths,
   layoutSlots,
 }: {
+  dir: string
   pagesPageFilePaths: Map<string, string>
   appPageFilePaths: Map<string, string>
   appLayoutFilePaths: Map<string, string>
   layoutSlots: Map<string, Set<string>>
 }): RouteTypesManifest {
-  const pages: Record<string, {}> = {}
-  const layouts: Record<string, {}> = {}
+  const appRoutes: Record<string, { path: string }> = {}
+  const pageRoutes: Record<string, { path: string }> = {}
+  const layoutRoutes: Record<
+    string,
+    { path: string } | { slots: string[]; path: string }
+  > = {}
 
-  const allPageFilePaths = new Map([...pagesPageFilePaths, ...appPageFilePaths])
+  const shouldSkipRoute = (route: string) =>
+    route.includes('(..)') ||
+    route.includes('(.)') ||
+    route.includes('(...)') ||
+    route.includes('@')
 
-  // all page files
-  for (const [route, _filePath] of allPageFilePaths) {
-    // Ignore intercepting routes (but not catch-all routes)
-    if (
-      route.includes('(..)') ||
-      route.includes('(.)') ||
-      route.includes('(...)') || // Only filter intercepting routes, not catch-all [...]
-      route.includes('@') // should never happen but just in case
-    ) {
-      continue
-    }
-    pages[route] = {}
+  // Build app routes
+  for (const [route, filePath] of appPageFilePaths) {
+    if (shouldSkipRoute(filePath)) continue
+    appRoutes[route] = { path: path.relative(dir, filePath) }
   }
 
-  // app directory layout files
-  for (const [route] of appLayoutFilePaths) {
-    // Ignore intercepting routes (but not catch-all routes)
-    if (
-      route.includes('(..)') ||
-      route.includes('(.)') ||
-      route.includes('(...)') || // Only filter intercepting routes, not catch-all [...]
-      route.includes('@') // should never happen but just in case
-    ) {
-      continue
-    }
+  // Build page routes
+  for (const [route, filePath] of pagesPageFilePaths) {
+    if (shouldSkipRoute(filePath)) continue
+    pageRoutes[route] = { path: path.relative(dir, filePath) }
+  }
 
-    // Check if this layout has parallel routes (slots)
+  // Build layout routes
+  for (const [route, filePath] of appLayoutFilePaths) {
+    if (shouldSkipRoute(filePath)) continue
+
     if (layoutSlots.has(route)) {
       const slots = Array.from(layoutSlots.get(route)!).sort()
-      layouts[route] = { slots }
+      layoutRoutes[route] = { slots, path: path.relative(dir, filePath) }
     } else {
-      layouts[route] = {}
+      layoutRoutes[route] = { path: path.relative(dir, filePath) }
     }
   }
 
   return {
-    pages,
-    layouts,
+    appRoutes,
+    pageRoutes,
+    layoutRoutes,
   }
 }
 
@@ -300,6 +305,7 @@ async function startWatcher(
     await mkdir(path.dirname(routeTypesFilePath), { recursive: true })
 
     const routeTypesManifest = createRouteTypesManifest({
+      dir,
       pagesPageFilePaths: new Map(),
       appPageFilePaths: new Map(),
       appLayoutFilePaths: new Map(),
@@ -585,25 +591,26 @@ async function startWatcher(
           continue
         }
 
-        if (opts.nextConfig.experimental.newTypedRoutes) {
-          // Check if this is a parallel route (slot) before it gets filtered out
-          if (isAppPath) {
-            const normalizedPageName = normalizePathSep(pageName)
-            const slotMatch = normalizedPageName.match(/^(.*)\/(@[^/]+)\//)
+        if (opts.nextConfig.experimental.newTypedRoutes && isAppPath) {
+          // *record parallel route slots for layout typing*
+          const normalizedPageName = normalizePathSep(pageName)
 
-            if (slotMatch) {
-              const parentPath = slotMatch[1] || '/'
-              const slotName = slotMatch[2].substring(1) // Remove '@' prefix
+          // this will likely run multiple times (e.g. if a parallel route
+          // has both a layout and a page, and children) but that's fine
+          const slotMatch = normalizedPageName.match(/^(.*)\/(@[^/]+)\//)
 
-              if (!layoutSlots.has(parentPath)) {
-                layoutSlots.set(parentPath, new Set())
-              }
-              layoutSlots.get(parentPath)!.add(slotName)
+          if (slotMatch) {
+            const parentPath = slotMatch[1] || '/'
+            const slotName = slotMatch[2].substring(1) // Remove '@' prefix
+
+            if (!layoutSlots.has(parentPath)) {
+              layoutSlots.set(parentPath, new Set())
             }
+            layoutSlots.get(parentPath)!.add(slotName)
           }
 
-          // Check if this is a layout file before it gets filtered out by isAppRouterPage
-          if (isAppPath && layoutFileRegex.test(fileName)) {
+          // *record layouts* (later filtered out by isAppRouterPage)
+          if (layoutFileRegex.test(fileName)) {
             const layoutRoute = normalizeAppPath(pageName).replace(/%5F/g, '_')
 
             // Ignore files/directories starting with `_` in the app directory
@@ -655,6 +662,7 @@ async function startWatcher(
             opts.fsChecker.nextDataRoutes.add(pageName)
           }
         }
+        // *record pages*
         ;(isAppPath ? appPageFilePaths : pagesPageFilePaths).set(
           pageName,
           fileName
@@ -1054,6 +1062,7 @@ async function startWatcher(
           await mkdir(path.dirname(routeTypesFilePath), { recursive: true })
 
           const routeTypesManifest = createRouteTypesManifest({
+            dir,
             pagesPageFilePaths,
             appPageFilePaths,
             appLayoutFilePaths,
