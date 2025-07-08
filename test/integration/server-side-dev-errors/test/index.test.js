@@ -354,6 +354,7 @@ describe('server-side dev errors', () => {
       .trim()
     // FIXME(veil): error repeated
     if (isTurbopack) {
+      // Turbopack produces incorrect mappings in the sourcemap.
       expect(stderrOutput).toMatchInlineSnapshot(`
         "Error: catch this rejection
             at Timeout._onTimeout (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:19)
@@ -387,29 +388,29 @@ describe('server-side dev errors', () => {
       // sometimes there is a leading newline, so trim it
       expect(stderrOutput.trimStart()).toMatchInlineSnapshot(`
         "Error: catch this rejection
-            at Timeout.eval [as _onTimeout] (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:19)
+            at Timeout.eval [as _onTimeout] (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:20)
            5 | export async function getServerSideProps() {
            6 |   setTimeout(() => {
         >  7 |     Promise.reject(new Error('catch this rejection'))
-             |                   ^
+             |                    ^
            8 |   }, 10)
            9 |   return {
           10 |     props: {},
          ⨯ unhandledRejection: Error: catch this rejection
-            at Timeout.eval [as _onTimeout] (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:19)
+            at Timeout.eval [as _onTimeout] (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:20)
            5 | export async function getServerSideProps() {
            6 |   setTimeout(() => {
         >  7 |     Promise.reject(new Error('catch this rejection'))
-             |                   ^
+             |                    ^
            8 |   }, 10)
            9 |   return {
           10 |     props: {},
          ⨯ unhandledRejection:  Error: catch this rejection
-            at Timeout.eval [as _onTimeout] (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:19)
+            at Timeout.eval [as _onTimeout] (../../test/integration/server-side-dev-errors/pages/uncaught-rejection.js:7:20)
            5 | export async function getServerSideProps() {
            6 |   setTimeout(() => {
         >  7 |     Promise.reject(new Error('catch this rejection'))
-             |                   ^
+             |                    ^
            8 |   }, 10)
            9 |   return {
           10 |     props: {},"

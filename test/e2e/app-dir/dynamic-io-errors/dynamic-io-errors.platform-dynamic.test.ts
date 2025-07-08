@@ -100,6 +100,7 @@ describe.each(
 
         if (isTurbopack) {
           if (inPrerenderDebugMode) {
+            // Turbopack produces incorrect mappings in the sourcemap.
             expect(output).toMatchInlineSnapshot(`
              "Error: Route "/" used \`Math.random()\` outside of \`"use cache"\` and without explicitly calling \`await connection()\` beforehand. See more info here: https://nextjs.org/docs/messages/next-prerender-random
                  at getRandomNumber (turbopack:///[project]/app/page.tsx:32:14)
@@ -132,12 +133,12 @@ describe.each(
           if (inPrerenderDebugMode) {
             expect(output).toMatchInlineSnapshot(`
              "Error: Route "/" used \`Math.random()\` outside of \`"use cache"\` and without explicitly calling \`await connection()\` beforehand. See more info here: https://nextjs.org/docs/messages/next-prerender-random
-                 at getRandomNumber (webpack:///app/page.tsx:32:14)
-                 at RandomReadingComponent (webpack:///app/page.tsx:40:17)
+                 at getRandomNumber (webpack:///app/page.tsx:32:15)
+                 at RandomReadingComponent (webpack:///app/page.tsx:40:18)
                30 |
                31 | function getRandomNumber() {
              > 32 |   return Math.random()
-                  |              ^
+                  |               ^
                33 | }
                34 |
                35 | function RandomReadingComponent() {

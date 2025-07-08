@@ -231,8 +231,8 @@ async function nativeTraceSource(
     if (traced !== null) {
       const { originalPosition, sourceContent } = traced
       const applicableSourceMap = findApplicableSourceMapPayload(
-        frame.line ?? 0,
-        frame.column ?? 0,
+        (frame.line ?? 1) - 1,
+        (frame.column ?? 1) - 1,
         sourceMapPayload
       )
 

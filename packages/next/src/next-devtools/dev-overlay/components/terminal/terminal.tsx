@@ -22,8 +22,8 @@ function getFile(lines: string[]) {
     fileName: hasLocation ? fileName : contentFileName,
     location: hasLocation
       ? {
-          line: parsedLine,
-          column: parsedColumn,
+          line1: parsedLine,
+          column1: parsedColumn,
         }
       : undefined,
   }
@@ -74,18 +74,19 @@ export const Terminal: React.FC<TerminalProps> = function Terminal({
     })
   }, [source])
 
+  console.log({ file })
   const open = useOpenInEditor({
     file: file?.fileName,
-    line1: file?.location?.line,
-    column1: file?.location?.column,
+    line1: file?.location?.line1 ?? 1,
+    column1: file?.location?.column1 ?? 1,
   })
 
   const stackFrame: StackFrame = {
     file: file?.fileName ?? null,
     methodName: '',
     arguments: [],
-    line1: file?.location?.line ?? null,
-    column1: file?.location?.column ?? null,
+    line1: file?.location?.line1 ?? null,
+    column1: file?.location?.column1 ?? null,
   }
 
   const fileExtension = stackFrame?.file?.split('.').pop()

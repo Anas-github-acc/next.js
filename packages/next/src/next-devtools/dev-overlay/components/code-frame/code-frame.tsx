@@ -29,8 +29,8 @@ export function CodeFrame({ stackFrame, codeFrame }: CodeFrameProps) {
 
   const open = useOpenInEditor({
     file: stackFrame.file,
-    line1: stackFrame.line1,
-    column1: stackFrame.column1,
+    line1: stackFrame.line1 ?? 1,
+    column1: stackFrame.column1 ?? 1,
   })
 
   const fileExtension = stackFrame?.file?.split('.').pop()

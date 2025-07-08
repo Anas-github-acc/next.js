@@ -87,6 +87,7 @@ describe('build-output-prerender', () => {
     })
 
     it('shows all prerender errors with readable stacks and code frames', async () => {
+      // Turbopack produces incorrect mappings in the sourcemap.
       if (isTurbopack) {
         expect(getPrerenderOutput(next.cliOutput)).toMatchInlineSnapshot(`
          "Error: Route "/client" used \`new Date()\` inside a Client Component without a Suspense boundary above it. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time-client
@@ -117,21 +118,21 @@ describe('build-output-prerender', () => {
       } else {
         expect(getPrerenderOutput(next.cliOutput)).toMatchInlineSnapshot(`
          "Error: Route "/client" used \`new Date()\` inside a Client Component without a Suspense boundary above it. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time-client
-             at Page (webpack:///app/client/page.tsx:4:27)
+             at Page (webpack:///app/client/page.tsx:4:28)
            2 |
            3 | export default function Page() {
          > 4 |   return <p>Current time: {new Date().toISOString()}</p>
-             |                           ^
+             |                            ^
            5 | }
            6 |
          To get a more detailed stack trace and pinpoint the issue, start the app in development mode by running \`next dev\`, then open "/client" in your browser to investigate the error.
          Error occurred prerendering page "/client". Read more: https://nextjs.org/docs/messages/prerender-error
          Error: Route "/server" used \`Math.random()\` outside of \`"use cache"\` and without explicitly calling \`await connection()\` beforehand. See more info here: https://nextjs.org/docs/messages/next-prerender-random
-             at Page (webpack:///app/server/page.tsx:13:26)
+             at Page (webpack:///app/server/page.tsx:13:27)
            11 |   await cachedDelay()
            12 |
          > 13 |   return <p>Random: {Math.random()}</p>
-              |                          ^
+              |                           ^
            14 | }
            15 |
          To get a more detailed stack trace and pinpoint the issue, start the app in development mode by running \`next dev\`, then open "/server" in your browser to investigate the error.

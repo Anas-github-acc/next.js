@@ -120,11 +120,11 @@ describe.each(
           if (inPrerenderDebugMode) {
             expect(output).toMatchInlineSnapshot(`
              "Error: Route "/" used \`new Date()\` inside a Client Component without a Suspense boundary above it. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time-client
-                 at SyncIO (turbopack:///[project]/app/client.tsx:5:15)
+                 at SyncIO (turbopack:///[project]/app/client.tsx:5:16)
                3 | export function SyncIO() {
                4 |   // This is a sync IO access that should not cause an error
              > 5 |   const data = new Date().toISOString()
-                 |               ^
+                 |                ^
                6 |
                7 |   return (
                8 |     <main>
@@ -149,11 +149,11 @@ describe.each(
           if (inPrerenderDebugMode) {
             expect(output).toMatchInlineSnapshot(`
              "Error: Route "/" used \`new Date()\` inside a Client Component without a Suspense boundary above it. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time-client
-                 at SyncIO (webpack:///app/client.tsx:5:15)
+                 at SyncIO (webpack:///app/client.tsx:5:16)
                3 | export function SyncIO() {
                4 |   // This is a sync IO access that should not cause an error
              > 5 |   const data = new Date().toISOString()
-                 |               ^
+                 |                ^
                6 |
                7 |   return (
                8 |     <main>
@@ -308,7 +308,7 @@ describe.each(
                332 |  */
                333 | function InnerLayoutRouter({
              > 334 |   tree,
-                   |  ^
+                   |   ^
                335 |   segmentPath,
                336 |   cacheNode,
                337 |   url,
@@ -417,11 +417,11 @@ describe.each(
           if (inPrerenderDebugMode) {
             expect(output).toMatchInlineSnapshot(`
              "Error: Route "/" used \`new Date()\` inside a Client Component without a Suspense boundary above it. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time-client
-                 at SyncIO (turbopack:///[project]/app/client.tsx:5:15)
+                 at SyncIO (turbopack:///[project]/app/client.tsx:5:16)
                3 | export function SyncIO() {
                4 |   // This is a sync IO access that should not cause an error
              > 5 |   const data = new Date().toISOString()
-                 |               ^
+                 |                ^
                6 |
                7 |   return (
                8 |     <main>
@@ -446,11 +446,11 @@ describe.each(
           if (inPrerenderDebugMode) {
             expect(output).toMatchInlineSnapshot(`
              "Error: Route "/" used \`new Date()\` inside a Client Component without a Suspense boundary above it. See more info here: https://nextjs.org/docs/messages/next-prerender-current-time-client
-                 at SyncIO (webpack:///app/client.tsx:5:15)
+                 at SyncIO (webpack:///app/client.tsx:5:16)
                3 | export function SyncIO() {
                4 |   // This is a sync IO access that should not cause an error
              > 5 |   const data = new Date().toISOString()
-                 |               ^
+                 |                ^
                6 |
                7 |   return (
                8 |     <main>

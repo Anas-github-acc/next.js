@@ -237,7 +237,7 @@ export async function createOriginalStackFrame({
   const traced: IgnorableStackFrame = {
     file: resolvedFilePath,
     line1: sourcePosition.line,
-    column1: (sourcePosition.column ?? 0) + 1,
+    column1: sourcePosition.column === null ? null : sourcePosition.column + 1,
     methodName:
       // We ignore the sourcemapped name since it won't be the correct name.
       // The callsite will point to the column of the variable name instead of the

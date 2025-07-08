@@ -16,8 +16,8 @@ export const CallStackFrame: React.FC<{
     hasSource
       ? {
           file: f.file,
-          line1: f.line1,
-          column1: f.column1,
+          line1: f.line1 ?? 1,
+          column1: f.column1 ?? 1,
         }
       : undefined
   )
