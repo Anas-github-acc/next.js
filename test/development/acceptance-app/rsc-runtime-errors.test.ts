@@ -51,19 +51,36 @@ describe('Error overlay - RSC runtime errors', () => {
 
     const browser = await next.browser('/client')
 
-    await expect(browser).toDisplayRedbox(`
-      {
-        "description": "\`cookies\` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
-        "environmentLabel": null,
-        "label": "Runtime Error",
-        "source": "app/client/page.js (4:16) @ Page
-      > 4 |   callServerApi()
-          |                ^",
-        "stack": [
-          "Page app/client/page.js (4:16)",
-        ],
-      }
-    `)
+    // Turbopack produces incorrect mappings in the sourcemap.
+    if (isTurbopack) {
+      await expect(browser).toDisplayRedbox(`
+       {
+         "description": "\`cookies\` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+         "environmentLabel": null,
+         "label": "Runtime Error",
+         "source": "app/client/page.js (4:15) @ Page
+       > 4 |   callServerApi()
+           |               ^",
+         "stack": [
+           "Page app/client/page.js (4:15)",
+         ],
+       }
+      `)
+    } else {
+      await expect(browser).toDisplayRedbox(`
+       {
+         "description": "\`cookies\` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context",
+         "environmentLabel": null,
+         "label": "Runtime Error",
+         "source": "app/client/page.js (4:16) @ Page
+       > 4 |   callServerApi()
+           |                ^",
+         "stack": [
+           "Page app/client/page.js (4:16)",
+         ],
+       }
+      `)
+    }
   })
 
   it('should show source code for jsx errors from server component', async () => {

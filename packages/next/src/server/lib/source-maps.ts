@@ -46,10 +46,12 @@ export function sourceMapIgnoreListsEverything(
 /**
  * Finds the sourcemap payload applicable to a given frame.
  * Equal to the input unless an Index Source Map is used.
+ * @param line0 - The line number of the frame, 0-based.
+ * @param column0 - The column number of the frame, 0-based.
  */
 export function findApplicableSourceMapPayload(
-  line: number,
-  column: number,
+  line0: number,
+  column0: number,
   payload: ModernSourceMapPayload
 ): BasicSourceMapPayload | undefined {
   if ('sections' in payload) {
@@ -71,8 +73,8 @@ export function findApplicableSourceMapPayload(
       const offset = section.offset
 
       if (
-        offset.line < line ||
-        (offset.line === line && offset.column <= column)
+        offset.line < line0 ||
+        (offset.line === line0 && offset.column <= column0)
       ) {
         result = section
         left = middle + 1

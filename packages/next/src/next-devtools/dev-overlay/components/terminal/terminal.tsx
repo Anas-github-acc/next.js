@@ -3,7 +3,7 @@ import * as React from 'react'
 import { HotlinkedText } from '../hot-linked-text'
 import { EditorLink } from './editor-link'
 import { ExternalIcon } from '../../icons/external'
-import { getFrameSource } from '../../../shared/stack-frame'
+import { getFrameSource, type StackFrame } from '../../../shared/stack-frame'
 import { useOpenInEditor } from '../../utils/use-open-in-editor'
 import { FileIcon } from '../../icons/file'
 
@@ -76,16 +76,16 @@ export const Terminal: React.FC<TerminalProps> = function Terminal({
 
   const open = useOpenInEditor({
     file: file?.fileName,
-    lineNumber: file?.location?.line ?? 1,
-    column: file?.location?.column ?? 0,
+    line1: file?.location?.line,
+    column1: file?.location?.column,
   })
 
-  const stackFrame = {
+  const stackFrame: StackFrame = {
     file: file?.fileName ?? null,
     methodName: '',
     arguments: [],
-    lineNumber: file?.location?.line ?? null,
-    column: file?.location?.column ?? null,
+    line1: file?.location?.line ?? null,
+    column1: file?.location?.column ?? null,
   }
 
   const fileExtension = stackFrame?.file?.split('.').pop()

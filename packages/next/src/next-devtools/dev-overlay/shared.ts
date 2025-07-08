@@ -293,7 +293,15 @@ export function useErrorOverlayReducer(
     const pendingEvent: SupportedErrorEvent = {
       id,
       error,
-      frames,
+      frames: frames.map((frame) => {
+        return {
+          methodName: frame.methodName,
+          file: frame.file,
+          line1: frame.lineNumber,
+          column1: frame.column,
+          arguments: frame.arguments,
+        }
+      }),
       componentStackFrames,
       type: isRecoverableError(error)
         ? 'recoverable'

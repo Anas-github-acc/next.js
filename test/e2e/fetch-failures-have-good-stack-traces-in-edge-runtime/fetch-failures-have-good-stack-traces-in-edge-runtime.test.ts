@@ -31,19 +31,20 @@ describe('fetch failures have good stack traces in edge runtime', () => {
         expect(stripAnsi(next.cliOutput.slice(outputIndex))).toContain(
           '' +
             '\n ⨯ Error [TypeError]: fetch failed' +
-            '\n    at anotherFetcher (src/fetcher.js:6:16)' +
-            '\n    at fetcher (src/fetcher.js:2:16)' +
+            '\n    at anotherFetcher (src/fetcher.js:6:15)' +
+            '\n    at fetcher (src/fetcher.js:2:15)' +
             '\n    at UnknownDomainEndpoint (pages/api/unknown-domain.js:6:16)' +
             '\n  4 |' +
             '\n  5 | async function anotherFetcher(...args) {' +
             '\n> 6 |   return await fetch(...args)' +
-            '\n    |                ^' +
+            '\n    |               ^' +
             '\n  7 | }' +
             '\n  8 |' +
             // TODO(veil): Why double error?
             '\n ⨯ Error [TypeError]: fetch failed'
         )
 
+        // Turbopack produces incorrect mappings in the sourcemap.
         // eslint-disable-next-line jest/no-standalone-expect
         await expect(browser).toDisplayRedbox(`
        {
@@ -56,7 +57,7 @@ describe('fetch failures have good stack traces in edge runtime', () => {
          "stack": [
            "anotherFetcher src/fetcher.js (6:16)",
            "fetcher src/fetcher.js (2:16)",
-           "UnknownDomainEndpoint pages/api/unknown-domain.js (6:16)",
+           "UnknownDomainEndpoint pages/api/unknown-domain.js (6:${isTurbopack ? 15 : 16})",
          ],
        }
       `)
