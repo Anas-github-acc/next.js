@@ -152,7 +152,7 @@ async function verifyTypeScript(opts: SetupOpts) {
   return usingTypeScript
 }
 
-interface RouteTypesManifest {
+export interface RouteTypesManifest {
   pages: Record<string, {}>
   layouts: Record<string, {} | { slots: string[] }>
 }
@@ -296,11 +296,8 @@ async function startWatcher(
   )
 
   if (opts.nextConfig.experimental.newTypedRoutes) {
-    // Create and write routes.json and types/routes.ts files
-    const typesDir = path.join(distDir, 'types')
-    if (!fs.existsSync(typesDir)) {
-      await mkdir(typesDir, { recursive: true })
-    }
+    const routeTypesFilePath = path.join(distDir, 'types', 'routes.ts')
+    await mkdir(path.dirname(routeTypesFilePath), { recursive: true })
 
     const routeTypesManifest = createRouteTypesManifest({
       pagesPageFilePaths: new Map(),
@@ -309,17 +306,10 @@ async function startWatcher(
       layoutSlots: new Map(),
     })
 
-    // Write routes.json
-    const routesJsonPath = path.join(distDir, 'routes.json')
     await fs.promises.writeFile(
-      routesJsonPath,
-      JSON.stringify(routeTypesManifest, null, 2)
+      routeTypesFilePath,
+      generateRouteTypesFile(routeTypesManifest)
     )
-
-    // Write types/routes.ts that imports from routes.json
-    const routeTypesFilePath = path.join(typesDir, 'routes.ts')
-    const routeTypesFileContent = generateRouteTypesFile(routeTypesManifest)
-    await fs.promises.writeFile(routeTypesFilePath, routeTypesFileContent)
   }
 
   const prerenderManifestPath = path.join(distDir, PRERENDER_MANIFEST)
@@ -1060,36 +1050,19 @@ async function startWatcher(
         prevSortedRoutes = sortedRoutes
 
         if (opts.nextConfig.experimental.newTypedRoutes) {
-          // Update routes.json and types/routes.ts files
-          const updatedRouteTypesManifest = createRouteTypesManifest({
+          const routeTypesFilePath = path.join(distDir, 'types', 'routes.ts')
+          await mkdir(path.dirname(routeTypesFilePath), { recursive: true })
+
+          const routeTypesManifest = createRouteTypesManifest({
             pagesPageFilePaths,
             appPageFilePaths,
             appLayoutFilePaths,
             layoutSlots,
           })
-          const updatedTypesDir = path.join(distDir, 'types')
-          if (!fs.existsSync(updatedTypesDir)) {
-            await mkdir(updatedTypesDir, { recursive: true })
-          }
 
-          // Write updated routes.json
-          const updatedRoutesJsonPath = path.join(distDir, 'routes.json')
           await fs.promises.writeFile(
-            updatedRoutesJsonPath,
-            JSON.stringify(updatedRouteTypesManifest, null, 2)
-          )
-
-          // Write updated types/routes.ts
-          const updatedRouteTypesFilePath = path.join(
-            updatedTypesDir,
-            'routes.ts'
-          )
-          const updatedRouteTypesFileContent = generateRouteTypesFile(
-            updatedRouteTypesManifest
-          )
-          await fs.promises.writeFile(
-            updatedRouteTypesFilePath,
-            updatedRouteTypesFileContent
+            routeTypesFilePath,
+            generateRouteTypesFile(routeTypesManifest)
           )
         }
 
