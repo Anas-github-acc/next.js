@@ -1,5 +1,3 @@
-import type { PageProps } from '+types/routes'
-
 export default function HomePage(props: PageProps<'/'>) {
   return (
     <div>

@@ -1,4 +1,6 @@
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage(props: PageProps<'/blog/[slug]'>) {
+  const params = await props.params
+
   return (
     <div>
       <h2>Blog Post: {params.slug}</h2>

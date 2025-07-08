@@ -143,6 +143,7 @@ async function verifyTypeScript(opts: SetupOpts) {
     disableStaticImages: opts.nextConfig.images.disableStaticImages,
     hasAppDir: !!opts.appDir,
     hasPagesDir: !!opts.pagesDir,
+    nextConfig: opts.nextConfig,
   })
 
   if (verifyResult.version) {
@@ -157,10 +158,12 @@ interface RouteTypesManifest {
 }
 
 function createRouteTypesManifest({
+  pagesPageFilePaths,
   appPageFilePaths,
   appLayoutFilePaths,
   layoutSlots,
 }: {
+  pagesPageFilePaths: Map<string, string>
   appPageFilePaths: Map<string, string>
   appLayoutFilePaths: Map<string, string>
   layoutSlots: Map<string, Set<string>>
@@ -168,8 +171,10 @@ function createRouteTypesManifest({
   const pages: Record<string, {}> = {}
   const layouts: Record<string, {}> = {}
 
-  // app directory page files
-  for (const [route, _filePath] of appPageFilePaths) {
+  const allPageFilePaths = new Map([...pagesPageFilePaths, ...appPageFilePaths])
+
+  // all page files
+  for (const [route, _filePath] of allPageFilePaths) {
     // Ignore intercepting routes (but not catch-all routes)
     if (
       route.includes('(..)') ||
@@ -290,29 +295,32 @@ async function startWatcher(
     JSON.stringify(routesManifest)
   )
 
-  // Create and write routes.json and types/routes.ts files
-  const typesDir = path.join(distDir, 'types')
-  if (!fs.existsSync(typesDir)) {
-    await mkdir(typesDir, { recursive: true })
+  if (opts.nextConfig.experimental.newTypedRoutes) {
+    // Create and write routes.json and types/routes.ts files
+    const typesDir = path.join(distDir, 'types')
+    if (!fs.existsSync(typesDir)) {
+      await mkdir(typesDir, { recursive: true })
+    }
+
+    const routeTypesManifest = createRouteTypesManifest({
+      pagesPageFilePaths: new Map(),
+      appPageFilePaths: new Map(),
+      appLayoutFilePaths: new Map(),
+      layoutSlots: new Map(),
+    })
+
+    // Write routes.json
+    const routesJsonPath = path.join(distDir, 'routes.json')
+    await fs.promises.writeFile(
+      routesJsonPath,
+      JSON.stringify(routeTypesManifest, null, 2)
+    )
+
+    // Write types/routes.ts that imports from routes.json
+    const routeTypesFilePath = path.join(typesDir, 'routes.ts')
+    const routeTypesFileContent = generateRouteTypesFile(routeTypesManifest)
+    await fs.promises.writeFile(routeTypesFilePath, routeTypesFileContent)
   }
-
-  const routeTypesManifest = createRouteTypesManifest({
-    appPageFilePaths: new Map(),
-    appLayoutFilePaths: new Map(),
-    layoutSlots: new Map(),
-  })
-
-  // Write routes.json
-  const routesJsonPath = path.join(distDir, 'routes.json')
-  await fs.promises.writeFile(
-    routesJsonPath,
-    JSON.stringify(routeTypesManifest, null, 2)
-  )
-
-  // Write types/routes.ts that imports from routes.json
-  const routeTypesFilePath = path.join(typesDir, 'routes.ts')
-  const routeTypesFileContent = generateRouteTypesFile(routeTypesManifest)
-  await fs.promises.writeFile(routeTypesFilePath, routeTypesFileContent)
 
   const prerenderManifestPath = path.join(distDir, PRERENDER_MANIFEST)
   await fs.promises.writeFile(
@@ -587,29 +595,31 @@ async function startWatcher(
           continue
         }
 
-        // Check if this is a parallel route (slot) before it gets filtered out
-        if (isAppPath) {
-          const normalizedPageName = normalizePathSep(pageName)
-          const slotMatch = normalizedPageName.match(/^(.*)\/(@[^/]+)\//)
+        if (opts.nextConfig.experimental.newTypedRoutes) {
+          // Check if this is a parallel route (slot) before it gets filtered out
+          if (isAppPath) {
+            const normalizedPageName = normalizePathSep(pageName)
+            const slotMatch = normalizedPageName.match(/^(.*)\/(@[^/]+)\//)
 
-          if (slotMatch) {
-            const parentPath = slotMatch[1] || '/'
-            const slotName = slotMatch[2].substring(1) // Remove '@' prefix
+            if (slotMatch) {
+              const parentPath = slotMatch[1] || '/'
+              const slotName = slotMatch[2].substring(1) // Remove '@' prefix
 
-            if (!layoutSlots.has(parentPath)) {
-              layoutSlots.set(parentPath, new Set())
+              if (!layoutSlots.has(parentPath)) {
+                layoutSlots.set(parentPath, new Set())
+              }
+              layoutSlots.get(parentPath)!.add(slotName)
             }
-            layoutSlots.get(parentPath)!.add(slotName)
           }
-        }
 
-        // Check if this is a layout file before it gets filtered out by isAppRouterPage
-        if (isAppPath && layoutFileRegex.test(fileName)) {
-          const layoutRoute = normalizeAppPath(pageName).replace(/%5F/g, '_')
+          // Check if this is a layout file before it gets filtered out by isAppRouterPage
+          if (isAppPath && layoutFileRegex.test(fileName)) {
+            const layoutRoute = normalizeAppPath(pageName).replace(/%5F/g, '_')
 
-          // Ignore files/directories starting with `_` in the app directory
-          if (!normalizePathSep(layoutRoute).includes('/_')) {
-            appLayoutFilePaths.set(layoutRoute, fileName)
+            // Ignore files/directories starting with `_` in the app directory
+            if (!normalizePathSep(layoutRoute).includes('/_')) {
+              appLayoutFilePaths.set(layoutRoute, fileName)
+            }
           }
         }
 
@@ -1049,36 +1059,39 @@ async function startWatcher(
         }
         prevSortedRoutes = sortedRoutes
 
-        // Update routes.json and types/routes.ts files
-        const updatedRouteTypesManifest = createRouteTypesManifest({
-          appPageFilePaths,
-          appLayoutFilePaths,
-          layoutSlots,
-        })
-        const updatedTypesDir = path.join(distDir, 'types')
-        if (!fs.existsSync(updatedTypesDir)) {
-          await mkdir(updatedTypesDir, { recursive: true })
+        if (opts.nextConfig.experimental.newTypedRoutes) {
+          // Update routes.json and types/routes.ts files
+          const updatedRouteTypesManifest = createRouteTypesManifest({
+            pagesPageFilePaths,
+            appPageFilePaths,
+            appLayoutFilePaths,
+            layoutSlots,
+          })
+          const updatedTypesDir = path.join(distDir, 'types')
+          if (!fs.existsSync(updatedTypesDir)) {
+            await mkdir(updatedTypesDir, { recursive: true })
+          }
+
+          // Write updated routes.json
+          const updatedRoutesJsonPath = path.join(distDir, 'routes.json')
+          await fs.promises.writeFile(
+            updatedRoutesJsonPath,
+            JSON.stringify(updatedRouteTypesManifest, null, 2)
+          )
+
+          // Write updated types/routes.ts
+          const updatedRouteTypesFilePath = path.join(
+            updatedTypesDir,
+            'routes.ts'
+          )
+          const updatedRouteTypesFileContent = generateRouteTypesFile(
+            updatedRouteTypesManifest
+          )
+          await fs.promises.writeFile(
+            updatedRouteTypesFilePath,
+            updatedRouteTypesFileContent
+          )
         }
-
-        // Write updated routes.json
-        const updatedRoutesJsonPath = path.join(distDir, 'routes.json')
-        await fs.promises.writeFile(
-          updatedRoutesJsonPath,
-          JSON.stringify(updatedRouteTypesManifest, null, 2)
-        )
-
-        // Write updated types/routes.ts
-        const updatedRouteTypesFilePath = path.join(
-          updatedTypesDir,
-          'routes.ts'
-        )
-        const updatedRouteTypesFileContent = generateRouteTypesFile(
-          updatedRouteTypesManifest
-        )
-        await fs.promises.writeFile(
-          updatedRouteTypesFilePath,
-          updatedRouteTypesFileContent
-        )
 
         if (!resolved) {
           resolve()
